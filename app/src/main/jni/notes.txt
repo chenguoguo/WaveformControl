@@ -1,0 +1,3 @@
+# Generates JNI interface.
+mkdir -p ../java/ai/kitt/snowboy/
+swig -c++ -java -package ai.kitt.snowboy -outdir ../java/ai/kitt/snowboy -o snowboy-detect-swig.cc snowboy-detect-swig.i

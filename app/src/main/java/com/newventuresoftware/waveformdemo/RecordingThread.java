@@ -17,11 +17,16 @@ package com.newventuresoftware.waveformdemo;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.media.MediaPlayer;
 import android.util.Log;
 
+import ai.kitt.snowboy.SnowboyDetect;
+
 public class RecordingThread {
+    static { System.loadLibrary("snowboy-detect-android"); }
+
     private static final String LOG_TAG = RecordingThread.class.getSimpleName();
-    private static final int SAMPLE_RATE = 44100;
+    private static final int SAMPLE_RATE = 16000;
 
     public RecordingThread(AudioDataReceivedListener listener) {
         mListener = listener;
@@ -30,12 +35,23 @@ public class RecordingThread {
     private boolean mShouldContinue;
     private AudioDataReceivedListener mListener;
     private Thread mThread;
+    private SnowboyDetect mDetector = new SnowboyDetect("/sdcard/snowboy/common.res",
+                                                        "/sdcard/snowboy/snowboy.umdl");
+    private MediaPlayer mPlayer = new MediaPlayer();
 
     public boolean recording() {
         return mThread != null;
     }
 
     public void startRecording() {
+        mDetector.SetSensitivity("0.4");
+        mDetector.SetAudioGain(2);
+        try {
+            mPlayer.setDataSource("/sdcard/snowboy/ding.wav");
+            mPlayer.prepare();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (mThread != null)
             return;
 
@@ -61,11 +77,8 @@ public class RecordingThread {
         Log.v(LOG_TAG, "Start");
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-        // buffer size in bytes
-        int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-
+        // Buffer size in bytes: for 0.1 second of audio
+        int bufferSize = (int)(SAMPLE_RATE * 0.1 * 2);
         if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
             bufferSize = SAMPLE_RATE * 2;
         }
@@ -93,6 +106,13 @@ public class RecordingThread {
 
             // Notify waveform
             mListener.onAudioDataReceived(audioBuffer);
+
+            // Snowboy hotword detection.
+            int result = mDetector.RunDetection(audioBuffer, audioBuffer.length);
+            if (result > 0) {
+                Log.i("Snowboy: ", "Hotword " + Integer.toString(result) + " detected!");
+                mPlayer.start();
+            }
         }
 
         record.stop();
