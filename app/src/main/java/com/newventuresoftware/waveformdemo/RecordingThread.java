@@ -44,7 +44,7 @@ public class RecordingThread {
     }
 
     public void startRecording() {
-        mDetector.SetSensitivity("0.4");
+        mDetector.SetSensitivity("0.45");
         mDetector.SetAudioGain(2);
         try {
             mPlayer.setDataSource("/sdcard/snowboy/ding.wav");
