@@ -46,6 +46,7 @@ public class RecordingThread {
     public void startRecording() {
         mDetector.SetSensitivity("0.45");
         mDetector.SetAudioGain(2);
+        Log.i("INFO: GUOGUO ", mDetector.GetSensitivity());
         try {
             mPlayer.setDataSource("/sdcard/snowboy/ding.wav");
             mPlayer.prepare();
